@@ -2,37 +2,34 @@ package com.shashank.docqa.service;
 
 import com.shashank.docqa.dto.IngestDocumentRequest;
 import com.shashank.docqa.dto.IngestDocumentResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
-@Slf4j
 public class DocumentService {
+
+    private final ChunkingService chunkingService;
+
+    public DocumentService(ChunkingService chunkingService) {
+        this.chunkingService = chunkingService;
+    }
 
     public IngestDocumentResponse ingest(IngestDocumentRequest request) {
 
-        // For now, just simulate ingestion
         UUID documentId = UUID.randomUUID();
 
-        int chunksCreated = simulateChunking(request.getContent());
-
-        System.out.println("Inside DocumentService.ingest()");
+        List<String> chunks = chunkingService.chunkText(request.getContent());
+        for (int i = 0; i < chunks.size(); i++) {
+            System.out.println("Chunk " + i + ": " + chunks.get(i));
+        }
 
         return new IngestDocumentResponse(
                 documentId,
                 "INGESTED",
-                chunksCreated
+                chunks.size(),
+                chunks
         );
-    }
-
-    private int simulateChunking(String content) {
-        if (content == null || content.isEmpty()) {
-            return 0;
-        }
-
-        // simple logic for now
-        return Math.max(1, content.length() / 500);
     }
 }
