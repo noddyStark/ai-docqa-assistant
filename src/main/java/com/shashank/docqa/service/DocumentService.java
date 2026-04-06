@@ -20,21 +20,29 @@ public class DocumentService {
     private final ChunkingService chunkingService;
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
+    private final EmbeddingService embeddingService;
 
     public DocumentService(
             ChunkingService chunkingService,
             DocumentRepository documentRepository,
-            DocumentChunkRepository documentChunkRepository
+            DocumentChunkRepository documentChunkRepository,
+            EmbeddingService embeddingService
     ) {
         this.chunkingService = chunkingService;
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
+        this.embeddingService = embeddingService;
     }
 
     public IngestDocumentResponse ingest(IngestDocumentRequest request) {
 
         UUID documentId = UUID.randomUUID();
         List<String> chunks = chunkingService.chunkText(request.getContent());
+
+        if (!chunks.isEmpty()) {
+            List<Double> embedding = embeddingService.generateEmbedding(chunks.get(0));
+            System.out.println("Generated embedding dimension: " + embedding.size());
+        }
 
         Document document = new Document();
         document.setId(documentId);
