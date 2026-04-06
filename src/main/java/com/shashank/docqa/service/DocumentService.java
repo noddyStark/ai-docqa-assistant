@@ -1,5 +1,7 @@
 package com.shashank.docqa.service;
 
+import com.shashank.docqa.dto.DocumentChunkResponse;
+import com.shashank.docqa.dto.DocumentSummaryResponse;
 import com.shashank.docqa.dto.IngestDocumentRequest;
 import com.shashank.docqa.dto.IngestDocumentResponse;
 import com.shashank.docqa.entity.Document;
@@ -60,5 +62,31 @@ public class DocumentService {
                 chunks.size(),
                 chunks
         );
+    }
+
+    public List<DocumentSummaryResponse> getAllDocuments() {
+        return documentRepository.findAll()
+                .stream()
+                .map(document -> new DocumentSummaryResponse(
+                        document.getId(),
+                        document.getTitle(),
+                        document.getSourceUrl(),
+                        document.getContentType(),
+                        document.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    public List<DocumentChunkResponse> getChunksByDocumentId(UUID documentId) {
+        return documentChunkRepository.findByDocumentIdOrderByChunkIndexAsc(documentId)
+                .stream()
+                .map(chunk -> new DocumentChunkResponse(
+                        chunk.getId(),
+                        chunk.getDocumentId(),
+                        chunk.getChunkIndex(),
+                        chunk.getChunkText(),
+                        chunk.getCreatedAt()
+                ))
+                .toList();
     }
 }

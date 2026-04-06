@@ -1,9 +1,14 @@
 package com.shashank.docqa.controller;
 
+import com.shashank.docqa.dto.DocumentChunkResponse;
+import com.shashank.docqa.dto.DocumentSummaryResponse;
 import com.shashank.docqa.dto.IngestDocumentRequest;
 import com.shashank.docqa.dto.IngestDocumentResponse;
 import com.shashank.docqa.service.DocumentService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -17,7 +22,16 @@ public class DocumentController {
 
     @PostMapping
     public IngestDocumentResponse ingest(@RequestBody IngestDocumentRequest request) {
-        System.out.println("Inside DocumentController.ingest()");
         return documentService.ingest(request);
+    }
+
+    @GetMapping
+    public List<DocumentSummaryResponse> getAllDocuments() {
+        return documentService.getAllDocuments();
+    }
+
+    @GetMapping("/{documentId}/chunks")
+    public List<DocumentChunkResponse> getChunksByDocumentId(@PathVariable UUID documentId) {
+        return documentService.getChunksByDocumentId(documentId);
     }
 }
