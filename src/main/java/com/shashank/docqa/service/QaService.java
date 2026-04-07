@@ -60,10 +60,12 @@ public class QaService {
 
         for (int i = 0; i < chunks.size(); i++) {
             RetrievedChunkResponse chunk = chunks.get(i);
+            String documentTitle = documentService.getDocumentTitle(chunk.getDocumentId());
 
             sources.add(new AnswerSourceResponse(
                     "Source " + (i + 1),
                     chunk.getDocumentId(),
+                    documentTitle,
                     chunk.getChunkIndex(),
                     buildPreview(chunk.getChunkText()),
                     chunk.getSimilarityScore()

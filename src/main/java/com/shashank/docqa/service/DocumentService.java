@@ -134,6 +134,12 @@ public class DocumentService {
         return results;
     }
 
+    public String getDocumentTitle(UUID documentId) {
+        return documentRepository.findById(documentId)
+                .map(Document::getTitle)
+                .orElse("Unknown Document");
+    }
+
     private String toPgVector(List<Double> values) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < values.size(); i++) {
