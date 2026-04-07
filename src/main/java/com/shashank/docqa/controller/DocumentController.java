@@ -1,12 +1,6 @@
 package com.shashank.docqa.controller;
 
-import com.shashank.docqa.dto.DocumentChunkResponse;
-import com.shashank.docqa.dto.IngestDocumentResponse;
-import com.shashank.docqa.dto.AskQuestionRequest;
-import com.shashank.docqa.dto.IngestDocumentRequest;
-import com.shashank.docqa.dto.DocumentLibraryResponse;
-import com.shashank.docqa.dto.RetrievedChunkResponse;
-import com.shashank.docqa.dto.DocumentDetailResponse;
+import com.shashank.docqa.dto.*;
 import com.shashank.docqa.service.DocumentService;
 import com.shashank.docqa.service.QaService;
 import jakarta.validation.Valid;
@@ -17,8 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import com.shashank.docqa.dto.AskQuestionResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -71,6 +65,13 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "sourceUrl", required = false) String sourceUrl) {
         return documentService.ingestFile(file, sourceUrl);
+    }
+
+    @PutMapping("/{documentId}")
+    public IngestDocumentResponse reingestDocument(
+            @PathVariable UUID documentId,
+            @Valid @RequestBody ReingestDocumentRequest request) {
+        return documentService.reingestDocument(documentId, request);
     }
 
     @DeleteMapping("/{documentId}")

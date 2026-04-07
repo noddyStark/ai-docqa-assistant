@@ -60,7 +60,9 @@ public class DocumentService {
         document.setTitle(request.getTitle());
         document.setSourceUrl(request.getSourceUrl());
         document.setContentType("text/plain");
-        document.setCreatedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        document.setCreatedAt(now);
+        document.setUpdatedAt(now);
 
         documentRepository.save(document);
 
@@ -217,6 +219,47 @@ public class DocumentService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to read uploaded file", e);
         }
+    }
+
+    @Transactional
+    public IngestDocumentResponse reingestDocument(UUID documentId, ReingestDocumentRequest request) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found: " + documentId));
+
+        List<String> chunks = chunkingService.chunkText(request.getContent());
+
+        document.setTitle(request.getTitle());
+        document.setSourceUrl(request.getSourceUrl());
+        document.setContentType("text/plain");
+        document.setUpdatedAt(LocalDateTime.now());
+
+        documentRepository.save(document);
+
+        documentChunkRepository.deleteByDocumentId(documentId);
+
+        for (int i = 0; i < chunks.size(); i++) {
+            String chunkText = chunks.get(i);
+
+            List<Double> embeddingValues = embeddingService.generateEmbedding(chunkText);
+            float[] embedding = toFloatArray(embeddingValues);
+
+            DocumentChunk chunk = new DocumentChunk();
+            chunk.setId(UUID.randomUUID());
+            chunk.setDocumentId(documentId);
+            chunk.setChunkIndex(i);
+            chunk.setChunkText(chunkText);
+            chunk.setEmbedding(embedding);
+            chunk.setCreatedAt(LocalDateTime.now());
+
+            documentChunkRepository.save(chunk);
+        }
+
+        return new IngestDocumentResponse(
+                documentId,
+                "REINGESTED",
+                chunks.size(),
+                chunks
+        );
     }
 
     @Transactional

@@ -19,10 +19,8 @@ public class Document {
     private UUID id;
 
     private String title;
-
     private String sourceUrl;
-
     private String contentType;
-
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
