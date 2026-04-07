@@ -44,6 +44,11 @@ public class DocumentController {
         return documentService.getChunksByDocumentId(documentId);
     }
 
+    @GetMapping("/{documentId}")
+    public DocumentDetailResponse getDocumentById(@PathVariable UUID documentId) {
+        return documentService.getDocumentById(documentId);
+    }
+
     @PostMapping("/search")
     public List<RetrievedChunkResponse> searchRelevantChunks(@RequestBody AskQuestionRequest request) {
         return documentService.retrieveRelevantChunks(request.getQuestion(), 3);

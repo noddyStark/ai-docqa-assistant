@@ -107,6 +107,30 @@ public class DocumentService {
                 .toList();
     }
 
+    public DocumentDetailResponse getDocumentById(UUID documentId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found: " + documentId));
+
+        List<DocumentChunkSummaryResponse> chunkSummaries = documentChunkRepository
+                .findByDocumentIdOrderByChunkIndexAsc(documentId)
+                .stream()
+                .map(chunk -> new DocumentChunkSummaryResponse(
+                        chunk.getChunkIndex(),
+                        buildPreview(chunk.getChunkText())
+                ))
+                .toList();
+
+        return new DocumentDetailResponse(
+                document.getId(),
+                document.getTitle(),
+                document.getSourceUrl(),
+                document.getContentType(),
+                chunkSummaries.size(),
+                document.getCreatedAt(),
+                chunkSummaries
+        );
+    }
+
     public List<DocumentChunkResponse> getChunksByDocumentId(UUID documentId) {
         return documentChunkRepository.findByDocumentIdOrderByChunkIndexAsc(documentId)
                 .stream()
@@ -211,5 +235,19 @@ public class DocumentService {
         if (filename == null || (!filename.endsWith(".txt") && !filename.endsWith(".md"))) {
             throw new RuntimeException("Only .txt and .md files are supported");
         }
+    }
+
+    private String buildPreview(String text) {
+        int maxLength = 200;
+
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+
+        if (text.length() <= maxLength) {
+            return text;
+        }
+
+        return text.substring(0, maxLength) + "...";
     }
 }
