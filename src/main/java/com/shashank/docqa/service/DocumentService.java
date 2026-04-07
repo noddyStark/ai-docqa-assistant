@@ -204,6 +204,10 @@ public class DocumentService {
                 content = new String(file.getBytes(), StandardCharsets.UTF_8);
             }
 
+            if (content == null || content.isBlank()) {
+                throw new RuntimeException("Uploaded file does not contain readable text");
+            }
+
             IngestDocumentRequest request = new IngestDocumentRequest();
             request.setTitle(filename);
             request.setSourceUrl(sourceUrl);
@@ -251,8 +255,21 @@ public class DocumentService {
         }
 
         String filename = file.getOriginalFilename();
-        if (filename == null || (!filename.endsWith(".txt") && !filename.endsWith(".md") && !filename.endsWith(".pdf"))) {
+        if (filename == null || filename.isBlank()) {
+            throw new RuntimeException("Uploaded file must have a valid name");
+        }
+
+        String lowercaseFilename = filename.toLowerCase();
+
+        if (!lowercaseFilename.endsWith(".txt")
+                && !lowercaseFilename.endsWith(".md")
+                && !lowercaseFilename.endsWith(".pdf")) {
             throw new RuntimeException("Only .txt, .md, and .pdf files are supported");
+        }
+
+        long maxSizeBytes = 5 * 1024 * 1024;
+        if (file.getSize() > maxSizeBytes) {
+            throw new RuntimeException("File size must not exceed 5 MB");
         }
     }
 

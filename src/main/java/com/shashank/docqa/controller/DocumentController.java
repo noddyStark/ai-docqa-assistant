@@ -9,6 +9,7 @@ import com.shashank.docqa.dto.RetrievedChunkResponse;
 import com.shashank.docqa.dto.DocumentDetailResponse;
 import com.shashank.docqa.service.DocumentService;
 import com.shashank.docqa.service.QaService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +37,7 @@ public class DocumentController {
     }
 
     @PostMapping
-    public IngestDocumentResponse ingest(@RequestBody IngestDocumentRequest request) {
+    public IngestDocumentResponse ingest(@Valid @RequestBody IngestDocumentRequest request) {
         return documentService.ingest(request);
     }
 
@@ -56,12 +57,12 @@ public class DocumentController {
     }
 
     @PostMapping("/search")
-    public List<RetrievedChunkResponse> searchRelevantChunks(@RequestBody AskQuestionRequest request) {
+    public List<RetrievedChunkResponse> searchRelevantChunks(@Valid @RequestBody AskQuestionRequest request) {
         return documentService.retrieveRelevantChunks(request.getQuestion(), 3);
     }
 
     @PostMapping("/ask")
-    public AskQuestionResponse askQuestion(@RequestBody AskQuestionRequest request) {
+    public AskQuestionResponse askQuestion(@Valid @RequestBody AskQuestionRequest request) {
         return qaService.askQuestion(request.getQuestion());
     }
 
