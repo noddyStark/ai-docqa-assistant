@@ -1,9 +1,6 @@
 package com.shashank.docqa.controller;
 
-import com.shashank.docqa.dto.DocumentChunkResponse;
-import com.shashank.docqa.dto.DocumentSummaryResponse;
-import com.shashank.docqa.dto.IngestDocumentRequest;
-import com.shashank.docqa.dto.IngestDocumentResponse;
+import com.shashank.docqa.dto.*;
 import com.shashank.docqa.service.DocumentService;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,5 +30,10 @@ public class DocumentController {
     @GetMapping("/{documentId}/chunks")
     public List<DocumentChunkResponse> getChunksByDocumentId(@PathVariable UUID documentId) {
         return documentService.getChunksByDocumentId(documentId);
+    }
+
+    @PostMapping("/search")
+    public List<RetrievedChunkResponse> searchRelevantChunks(@RequestBody AskQuestionRequest request) {
+        return documentService.retrieveRelevantChunks(request.getQuestion(), 3);
     }
 }

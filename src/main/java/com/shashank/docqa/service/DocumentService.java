@@ -1,9 +1,6 @@
 package com.shashank.docqa.service;
 
-import com.shashank.docqa.dto.DocumentChunkResponse;
-import com.shashank.docqa.dto.DocumentSummaryResponse;
-import com.shashank.docqa.dto.IngestDocumentRequest;
-import com.shashank.docqa.dto.IngestDocumentResponse;
+import com.shashank.docqa.dto.*;
 import com.shashank.docqa.entity.Document;
 import com.shashank.docqa.entity.DocumentChunk;
 import com.shashank.docqa.repository.DocumentChunkRepository;
@@ -11,6 +8,7 @@ import com.shashank.docqa.repository.DocumentRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -105,5 +103,46 @@ public class DocumentService {
                         chunk.getCreatedAt()
                 ))
                 .toList();
+    }
+
+    public List<RetrievedChunkResponse> retrieveRelevantChunks(String question, int limit) {
+        List<Double> queryEmbeddingValues = embeddingService.generateEmbedding(question);
+        String queryEmbedding = toPgVector(queryEmbeddingValues);
+
+        List<Object[]> rows = documentChunkRepository.findTopSimilarChunks(queryEmbedding, limit);
+
+        List<RetrievedChunkResponse> results = new ArrayList<>();
+
+        for (Object[] row : rows) {
+            UUID chunkId = (UUID) row[0];
+            UUID documentId = (UUID) row[1];
+            Integer chunkIndex = (Integer) row[2];
+            String chunkText = (String) row[3];
+            double distance = ((Number) row[6]).doubleValue();
+
+            double similarityScore = 1.0 - distance;
+
+            results.add(new RetrievedChunkResponse(
+                    chunkId,
+                    documentId,
+                    chunkIndex,
+                    chunkText,
+                    similarityScore
+            ));
+        }
+
+        return results;
+    }
+
+    private String toPgVector(List<Double> values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.size(); i++) {
+            sb.append(values.get(i));
+            if (i < values.size() - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }
