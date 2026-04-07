@@ -13,6 +13,7 @@ public class OpenAiProperties {
 
     private Api api = new Api();
     private Embedding embedding = new Embedding();
+    private Chat chat = new Chat();
 
     @Getter
     @Setter
@@ -23,6 +24,12 @@ public class OpenAiProperties {
     @Getter
     @Setter
     public static class Embedding {
+        private String model;
+    }
+
+    @Getter
+    @Setter
+    public static class Chat {
         private String model;
     }
 }
