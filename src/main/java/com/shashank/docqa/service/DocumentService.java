@@ -6,6 +6,9 @@ import com.shashank.docqa.entity.DocumentChunk;
 import com.shashank.docqa.repository.DocumentChunkRepository;
 import com.shashank.docqa.repository.DocumentRepository;
 import jakarta.transaction.Transactional;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -183,10 +186,17 @@ public class DocumentService {
         validateFile(file);
 
         try {
-            String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+            String filename = file.getOriginalFilename();
+            String content;
+
+            if (filename != null && filename.toLowerCase().endsWith(".pdf")) {
+                content = extractTextFromPdf(file);
+            } else {
+                content = new String(file.getBytes(), StandardCharsets.UTF_8);
+            }
 
             IngestDocumentRequest request = new IngestDocumentRequest();
-            request.setTitle(file.getOriginalFilename());
+            request.setTitle(filename);
             request.setSourceUrl(sourceUrl);
             request.setContent(content);
 
@@ -232,8 +242,8 @@ public class DocumentService {
         }
 
         String filename = file.getOriginalFilename();
-        if (filename == null || (!filename.endsWith(".txt") && !filename.endsWith(".md"))) {
-            throw new RuntimeException("Only .txt and .md files are supported");
+        if (filename == null || (!filename.endsWith(".txt") && !filename.endsWith(".md") && !filename.endsWith(".pdf"))) {
+            throw new RuntimeException("Only .txt, .md, and .pdf files are supported");
         }
     }
 
@@ -249,5 +259,18 @@ public class DocumentService {
         }
 
         return text.substring(0, maxLength) + "...";
+    }
+
+    private String extractTextFromPdf(MultipartFile file) throws IOException {
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+            PDFTextStripper pdfTextStripper = new PDFTextStripper();
+            String text = pdfTextStripper.getText(document);
+
+            if (text == null || text.isBlank()) {
+                throw new RuntimeException("Could not extract readable text from PDF");
+            }
+
+            return text;
+        }
     }
 }

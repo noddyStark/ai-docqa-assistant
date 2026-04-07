@@ -1,6 +1,12 @@
 package com.shashank.docqa.controller;
 
-import com.shashank.docqa.dto.*;
+import com.shashank.docqa.dto.DocumentChunkResponse;
+import com.shashank.docqa.dto.IngestDocumentResponse;
+import com.shashank.docqa.dto.AskQuestionRequest;
+import com.shashank.docqa.dto.IngestDocumentRequest;
+import com.shashank.docqa.dto.DocumentLibraryResponse;
+import com.shashank.docqa.dto.RetrievedChunkResponse;
+import com.shashank.docqa.dto.DocumentDetailResponse;
 import com.shashank.docqa.service.DocumentService;
 import com.shashank.docqa.service.QaService;
 import org.springframework.web.bind.annotation.DeleteMapping;
