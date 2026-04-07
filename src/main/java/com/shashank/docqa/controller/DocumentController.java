@@ -3,6 +3,7 @@ package com.shashank.docqa.controller;
 import com.shashank.docqa.dto.*;
 import com.shashank.docqa.service.DocumentService;
 import com.shashank.docqa.service.QaService;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,8 +57,12 @@ public class DocumentController {
     @PostMapping("/upload")
     public IngestDocumentResponse uploadDocument(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "sourceUrl", required = false) String sourceUrl
-    ) {
+            @RequestParam(value = "sourceUrl", required = false) String sourceUrl) {
         return documentService.ingestFile(file, sourceUrl);
+    }
+
+    @DeleteMapping("/{documentId}")
+    public void deleteDocument(@PathVariable UUID documentId) {
+        documentService.deleteDocument(documentId);
     }
 }

@@ -5,6 +5,7 @@ import com.shashank.docqa.entity.Document;
 import com.shashank.docqa.entity.DocumentChunk;
 import com.shashank.docqa.repository.DocumentChunkRepository;
 import com.shashank.docqa.repository.DocumentRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -158,6 +159,16 @@ public class DocumentService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to read uploaded file", e);
         }
+    }
+
+    @Transactional
+    public void deleteDocument(UUID documentId) {
+        if (!documentRepository.existsById(documentId)) {
+            throw new RuntimeException("Document not found: " + documentId);
+        }
+
+        documentChunkRepository.deleteByDocumentId(documentId);
+        documentRepository.deleteById(documentId);
     }
 
     private String toPgVector(List<Double> values) {

@@ -12,6 +12,8 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
 
     List<DocumentChunk> findByDocumentIdOrderByChunkIndexAsc(UUID documentId);
 
+    void deleteByDocumentId(UUID documentId);
+
     @Query(value = """
             SELECT id, document_id, chunk_index, chunk_text, created_at, embedding,
                    (embedding <=> CAST(:queryEmbedding AS vector)) AS distance
