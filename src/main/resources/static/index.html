@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocQA Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f7fb;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 6px;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .result {
+            background: #f8fafc;
+            border: 1px solid #dbeafe;
+            padding: 12px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .sources {
+            margin-top: 10px;
+        }
+
+        .source-item {
+            background: #eef2ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .small {
+            font-size: 13px;
+            color: #555;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>AI-Powered Documentation Q&A Assistant</h1>
+
+    <div class="card">
+        <h2>Upload Document</h2>
+        <label for="file">Choose .txt / .md / .pdf file</label>
+        <input type="file" id="file">
+
+        <label for="sourceUrl">Source URL (optional)</label>
+        <input type="text" id="sourceUrl" placeholder="https://example.com/docs">
+
+        <button onclick="uploadDocument()">Upload Document</button>
+
+        <div id="uploadResult" class="result"></div>
+    </div>
+
+    <div class="row">
+        <div class="card">
+            <h2>Search Relevant Chunks</h2>
+            <label for="searchQuestion">Question</label>
+            <textarea id="searchQuestion" placeholder="How does Spring Boot simplify backend development?"></textarea>
+            <button onclick="searchChunks()">Search Chunks</button>
+            <div id="searchResult" class="result"></div>
+        </div>
+
+        <div class="card">
+            <h2>Ask Grounded Question</h2>
+            <label for="askQuestion">Question</label>
+            <textarea id="askQuestion" placeholder="What does Spring Boot help with?"></textarea>
+            <button onclick="askQuestion()">Ask Question</button>
+            <div id="askResult" class="result"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function uploadDocument() {
+        const fileInput = document.getElementById("file");
+        const sourceUrl = document.getElementById("sourceUrl").value;
+        const resultDiv = document.getElementById("uploadResult");
+
+        if (!fileInput.files.length) {
+            resultDiv.textContent = "Please choose a file first.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        if (sourceUrl) {
+            formData.append("sourceUrl", sourceUrl);
+        }
+
+        try {
+            const response = await fetch("/api/documents/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+            resultDiv.textContent = "Upload failed: " + error.message;
+        }
+    }
+
+    async function searchChunks() {
+        const question = document.getElementById("searchQuestion").value;
+        const resultDiv = document.getElementById("searchResult");
+
+        try {
+            const response = await fetch("/api/documents/search", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ question })
+            });
+
+            const data = await response.json();
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+            resultDiv.textContent = "Search failed: " + error.message;
+        }
+    }
+
+    async function askQuestion() {
+        const question = document.getElementById("askQuestion").value;
+        const resultDiv = document.getElementById("askResult");
+
+        try {
+            const response = await fetch("/api/documents/ask", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ question })
+            });
+
+            const data = await response.json();
+
+            let formatted = "Answer:\n" + data.answer + "\n\nSources:\n";
+            if (data.sources && data.sources.length > 0) {
+                data.sources.forEach(source => {
+                    formatted += `- ${source.sourceLabel} | ${source.documentTitle} | chunk ${source.chunkIndex}\n`;
+                    formatted += `  ${source.previewText}\n\n`;
+                });
+            }
+
+            resultDiv.textContent = formatted;
+        } catch (error) {
+            resultDiv.textContent = "Q&A failed: " + error.message;
+        }
+    }
+</script>
+</body>
+</html>
