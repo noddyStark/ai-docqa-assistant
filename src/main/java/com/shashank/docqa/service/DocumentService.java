@@ -1,17 +1,23 @@
 package com.shashank.docqa.service;
 
+import com.shashank.docqa.config.OcrProperties;
 import com.shashank.docqa.dto.*;
 import com.shashank.docqa.entity.Document;
 import com.shashank.docqa.entity.DocumentChunk;
 import com.shashank.docqa.repository.DocumentChunkRepository;
 import com.shashank.docqa.repository.DocumentRepository;
 import jakarta.transaction.Transactional;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -27,17 +33,20 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final EmbeddingService embeddingService;
+    private final OcrProperties ocrProperties;
 
     public DocumentService(
             ChunkingService chunkingService,
             DocumentRepository documentRepository,
             DocumentChunkRepository documentChunkRepository,
-            EmbeddingService embeddingService
+            EmbeddingService embeddingService,
+            OcrProperties ocrProperties
     ) {
         this.chunkingService = chunkingService;
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.embeddingService = embeddingService;
+        this.ocrProperties = ocrProperties;
     }
 
     @Transactional
@@ -266,11 +275,40 @@ public class DocumentService {
             PDFTextStripper pdfTextStripper = new PDFTextStripper();
             String text = pdfTextStripper.getText(document);
 
-            if (text == null || text.isBlank()) {
-                throw new RuntimeException("Could not extract readable text from PDF");
+            if (text != null && !text.isBlank() && text.trim().length() > 50) {
+                return text;
             }
 
-            return text;
+            return extractTextFromPdfWithOcr(document);
         }
+    }
+
+    private String extractTextFromPdfWithOcr(PDDocument document) throws IOException {
+        PDFRenderer pdfRenderer = new PDFRenderer(document);
+        Tesseract tesseract = new Tesseract();
+        tesseract.setDatapath(ocrProperties.getDatapath());
+        tesseract.setLanguage("eng");
+
+        StringBuilder extractedText = new StringBuilder();
+
+        for (int page = 0; page < document.getNumberOfPages(); page++) {
+            BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
+
+            try {
+                String pageText = tesseract.doOCR(image);
+                if (pageText != null && !pageText.isBlank()) {
+                    extractedText.append(pageText).append("\n");
+                }
+            } catch (TesseractException e) {
+                throw new RuntimeException("OCR failed while processing PDF page " + page, e);
+            }
+        }
+
+        String result = extractedText.toString().trim();
+        if (result.isBlank()) {
+            throw new RuntimeException("Could not extract readable text from PDF, even with OCR");
+        }
+
+        return result;
     }
 }
