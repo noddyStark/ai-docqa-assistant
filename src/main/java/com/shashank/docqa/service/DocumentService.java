@@ -39,11 +39,6 @@ public class DocumentService {
         UUID documentId = UUID.randomUUID();
         List<String> chunks = chunkingService.chunkText(request.getContent());
 
-        if (!chunks.isEmpty()) {
-            List<Double> embedding = embeddingService.generateEmbedding(chunks.get(0));
-            System.out.println("Generated embedding dimension: " + embedding.size());
-        }
-
         Document document = new Document();
         document.setId(documentId);
         document.setTitle(request.getTitle());
@@ -54,11 +49,17 @@ public class DocumentService {
         documentRepository.save(document);
 
         for (int i = 0; i < chunks.size(); i++) {
+            String chunkText = chunks.get(i);
+
+            List<Double> embeddingValues = embeddingService.generateEmbedding(chunkText);
+            float[] embedding = toFloatArray(embeddingValues);
+
             DocumentChunk chunk = new DocumentChunk();
             chunk.setId(UUID.randomUUID());
             chunk.setDocumentId(documentId);
             chunk.setChunkIndex(i);
-            chunk.setChunkText(chunks.get(i));
+            chunk.setChunkText(chunkText);
+            chunk.setEmbedding(embedding);
             chunk.setCreatedAt(LocalDateTime.now());
 
             documentChunkRepository.save(chunk);
@@ -70,6 +71,14 @@ public class DocumentService {
                 chunks.size(),
                 chunks
         );
+    }
+
+    private float[] toFloatArray(List<Double> values) {
+        float[] result = new float[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            result[i] = values.get(i).floatValue();
+        }
+        return result;
     }
 
     public List<DocumentSummaryResponse> getAllDocuments() {
