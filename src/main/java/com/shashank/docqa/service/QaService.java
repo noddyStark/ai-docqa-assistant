@@ -1,14 +1,12 @@
 package com.shashank.docqa.service;
 
 import com.shashank.docqa.config.OpenAiProperties;
-import com.shashank.docqa.dto.AskQuestionResponse;
-import com.shashank.docqa.dto.ChatRequest;
-import com.shashank.docqa.dto.ChatResponse;
-import com.shashank.docqa.dto.RetrievedChunkResponse;
+import com.shashank.docqa.dto.*;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -33,7 +31,9 @@ public class QaService {
         String prompt = buildPrompt(question, retrievedChunks);
         String answer = generateAnswer(prompt);
 
-        return new AskQuestionResponse(answer, retrievedChunks);
+        List<AnswerSourceResponse> sources = buildSources(retrievedChunks);
+
+        return new AskQuestionResponse(question, answer, sources);
     }
 
     private String buildPrompt(String question, List<RetrievedChunkResponse> chunks) {
@@ -53,6 +53,38 @@ public class QaService {
         }
 
         return sb.toString();
+    }
+
+    private List<AnswerSourceResponse> buildSources(List<RetrievedChunkResponse> chunks) {
+        List<AnswerSourceResponse> sources = new ArrayList<>();
+
+        for (int i = 0; i < chunks.size(); i++) {
+            RetrievedChunkResponse chunk = chunks.get(i);
+
+            sources.add(new AnswerSourceResponse(
+                    "Source " + (i + 1),
+                    chunk.getDocumentId(),
+                    chunk.getChunkIndex(),
+                    buildPreview(chunk.getChunkText()),
+                    chunk.getSimilarityScore()
+            ));
+        }
+
+        return sources;
+    }
+
+    private String buildPreview(String text) {
+        int maxLength = 200;
+
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+
+        if (text.length() <= maxLength) {
+            return text;
+        }
+
+        return text.substring(0, maxLength) + "...";
     }
 
     private String generateAnswer(String prompt) {

@@ -8,6 +8,7 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class AskQuestionResponse {
+    private String question;
     private String answer;
-    private List<RetrievedChunkResponse> sources;
+    private List<AnswerSourceResponse> sources;
 }
