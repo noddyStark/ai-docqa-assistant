@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +37,7 @@ public class DocumentService {
         this.embeddingService = embeddingService;
     }
 
+    @Transactional
     public IngestDocumentResponse ingest(IngestDocumentRequest request) {
 
         UUID documentId = UUID.randomUUID();
@@ -75,12 +77,21 @@ public class DocumentService {
         );
     }
 
-    private float[] toFloatArray(List<Double> values) {
-        float[] result = new float[values.size()];
-        for (int i = 0; i < values.size(); i++) {
-            result[i] = values.get(i).floatValue();
-        }
-        return result;
+    public DocumentLibraryResponse getDocumentLibrary() {
+        List<DocumentLibraryItemResponse> documents = documentRepository.findAll()
+                .stream()
+                .sorted(Comparator.comparing(Document::getCreatedAt).reversed())
+                .map(document -> new DocumentLibraryItemResponse(
+                        document.getId(),
+                        document.getTitle(),
+                        document.getSourceUrl(),
+                        document.getContentType(),
+                        (int) documentChunkRepository.countByDocumentId(document.getId()),
+                        document.getCreatedAt()
+                ))
+                .toList();
+
+        return new DocumentLibraryResponse(documents.size(), documents);
     }
 
     public List<DocumentSummaryResponse> getAllDocuments() {
@@ -169,6 +180,14 @@ public class DocumentService {
 
         documentChunkRepository.deleteByDocumentId(documentId);
         documentRepository.deleteById(documentId);
+    }
+
+    private float[] toFloatArray(List<Double> values) {
+        float[] result = new float[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            result[i] = values.get(i).floatValue();
+        }
+        return result;
     }
 
     private String toPgVector(List<Double> values) {

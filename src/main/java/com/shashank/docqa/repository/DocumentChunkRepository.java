@@ -14,6 +14,8 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
 
     void deleteByDocumentId(UUID documentId);
 
+    long countByDocumentId(UUID documentId);
+
     @Query(value = """
             SELECT id, document_id, chunk_index, chunk_text, created_at, embedding,
                    (embedding <=> CAST(:queryEmbedding AS vector)) AS distance

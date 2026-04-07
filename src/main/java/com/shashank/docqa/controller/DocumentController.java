@@ -35,8 +35,8 @@ public class DocumentController {
     }
 
     @GetMapping
-    public List<DocumentSummaryResponse> getAllDocuments() {
-        return documentService.getAllDocuments();
+    public DocumentLibraryResponse getDocumentLibrary() {
+        return documentService.getDocumentLibrary();
     }
 
     @GetMapping("/{documentId}/chunks")
